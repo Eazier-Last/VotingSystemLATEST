@@ -89,11 +89,15 @@ body {
 }
 
 .positionForm {
+  /* border: solid #1ab394 5px; */
   display: flex;
   align-items: center;
   /* justify-content: start; */
   flex-direction: column;
-  width: auto !important;
+  /* width: auto !important; */
+  width: 970px;
+  /* background-color: #1ab394; */
+  /* color: white !important; */
 }
 .positionForm {
   color: #1ab394;
@@ -187,6 +191,7 @@ body {
   height: auto;
   justify-content: space-evenly;
   align-items: center;
+  margin-bottom: 80px;
 }
 .profileRow {
   border: #1ab394 solid 2px;
@@ -340,6 +345,7 @@ body {
 }
 
 .candidateName {
+  line-height: 0;
   font-size: 1.5rem;
   color: #314051;
   font-weight: 500;
@@ -358,6 +364,7 @@ body {
 
 .votePageLabel {
   text-align: center;
+  color: #1ab394;
 }
 
 .votePageLogout {
@@ -379,7 +386,7 @@ body {
   align-items: center;
   flex-direction: column;
   width: 100vw;
-  height: 100vh;
+  /* height: 100vh; */
 }
 
 .thankYouBody {
@@ -406,5 +413,45 @@ body {
 .thankYou p {
   font-size: 1.5rem;
 }
-.thankYou button {
+
+.profileAction {
+  display: flex;
+  flex-direction: row;
+}
+.candidActions {
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  flex-direction: column;
+}
+.candidBtn {
+  height: 50px;
+  width: 50px;
+}
+
+.categoryAction {
+  display: flex;
+  align-items: center;
+}
+
+.categoryActionBtn {
+  display: flex;
+  height: 40px;
+}
+
+/* .candidate .selected {
+  background-color: #1ab394;
+} */
+.overlayText {
+  color: red;
+}
+
+.homeTopLabel {
+  background-color: #1ab394;
+  margin-top: 0 !important;
+  color: white !important;
+  padding: 10px;
+  font-size: 1.5rem;
+  border-radius: 20px;
+  /* margin-bottom: 20px; */
 }

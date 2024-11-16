@@ -21,6 +21,26 @@ function Home() {
   const [totalVoters, setTotalVoters] = useState(0);
   const [totalVoted, setTotalVoted] = useState(0);
   const [courseData, setCourseData] = useState([]);
+  const [orderedPositions, setOrderedPositions] = useState([]);
+
+  useEffect(() => {
+    const fetchPositions = async () => {
+      const { data, error } = await supabase
+        .from("positions")
+        .select("*")
+        .order("position_order", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching positions:", error);
+        return;
+      }
+
+      // Store the ordered positions
+      setOrderedPositions(data.map((position) => position.positions));
+    };
+
+    fetchPositions();
+  }, []);
 
   // Fetch total number of users and users who have voted
   useEffect(() => {
@@ -100,9 +120,14 @@ function Home() {
     fetchVoteCounts();
   }, []);
 
-  const groupedCandidates = candidates.reduce((acc, candidate) => {
-    acc[candidate.position] = acc[candidate.position] || [];
-    acc[candidate.position].push(candidate);
+  // Group candidates by positions, ordered by `position_order`
+  const groupedCandidates = orderedPositions.reduce((acc, position) => {
+    const candidatesForPosition = candidates.filter(
+      (candidate) => candidate.position === position
+    );
+    if (candidatesForPosition.length > 0) {
+      acc[position] = candidatesForPosition;
+    }
     return acc;
   }, {});
 
@@ -183,157 +208,198 @@ function Home() {
 
         <div className="listContainer">
           <div>
-            <h2 className="topLabel">CANDIDATES</h2>
+            <h2 className="topLabel homeTopLabel">CANDIDATES</h2>
           </div>
-          {Object.keys(groupedCandidates).map((position) => (
-            <div key={position}>
-              <h3 className="HomePosition">
-                {position
-                  .replace(/([A-Z])/g, " $1")
-                  .trim()
-                  .toUpperCase()}
-              </h3>
-              <div className="HomeprofileContainer">
-                <div>
-                  {groupedCandidates[position].map((candidate) => {
-                    const candidateVoteData =
-                      voteCounts[candidate.candidateID] || {};
-                    // const totalVotes = Object.values(candidateVoteData).reduce(
-                    //   (sum, value) =>
-                    //     sum + (typeof value === "number" ? value : 0),
-                    //   0
-                    // );
-
-                    return (
-                      <div
-                        key={candidate.candidateID}
-                        className="HomeCandidate"
-                      >
-                        <div className="HomeprofileRow">
-                          <div>
-                            <AvatarComponent
-                              imgStyle={{
-                                height: "55px",
-                                width: "55px",
-                                borderRadius: "50%",
-                              }}
-                              imgSrc={candidate.avatarUrl}
-                            />
+          <div>
+            {Object.keys(groupedCandidates).map((position) => (
+              <div key={position}>
+                <h3 className="HomePosition">
+                  {position
+                    .replace(/([A-Z])/g, " $1")
+                    .trim()
+                    .toUpperCase()}
+                </h3>
+                <div className="HomeprofileContainer">
+                  <div>
+                    {groupedCandidates[position].map((candidate) => {
+                      const candidateVoteData =
+                        voteCounts[candidate.candidateID] || {};
+                      // const totalVotes = Object.values(candidateVoteData).reduce(
+                      //   (sum, value) =>
+                      //     sum + (typeof value === "number" ? value : 0),
+                      //   0
+                      // );
+                      return (
+                        <div
+                          key={candidate.candidateID}
+                          className="HomeCandidate"
+                        >
+                          <div className="HomeprofileRow">
+                            <div>
+                              <AvatarComponent
+                                imgStyle={{
+                                  height: "55px",
+                                  width: "55px",
+                                  borderRadius: "50%",
+                                }}
+                                imgSrc={candidate.avatarUrl}
+                              />
+                            </div>
                           </div>
-                        </div>
-                        <div>
-                          <BarChart
-                            layout="horizontal"
-                            width={850}
-                            height={70}
-                            leftAxis={null}
-                            bottomAxis={null}
-                            slotProps={{ legend: { hidden: true } }}
-                            margin={{
-                              left: 20,
-                              right: 0,
-                              top: 0,
-                              bottom: 0,
-                            }}
-                            series={[
-                              {
-                                data: [candidateVoteData.BSIT || 0],
-                                stack: "total",
-                                color: "#1ab394",
-                                label: "BSIT",
-                                tooltip: {
-                                  label: `BSIT: ${candidateVoteData.BSIT || 0}`,
+                          <div>
+                            <BarChart
+                              layout="horizontal"
+                              width={850}
+                              height={70}
+                              leftAxis={null}
+                              bottomAxis={null}
+                              slotProps={{ legend: { hidden: true } }}
+                              margin={{
+                                left: 20,
+                                right: 0,
+                                top: 0,
+                                bottom: 0,
+                              }}
+                              series={[
+                                {
+                                  data: [candidateVoteData.BSIT || 0],
+                                  stack: "total",
+                                  color: "#1ab394",
+                                  label: "BSIT",
+                                  tooltip: {
+                                    label: `BSIT: ${
+                                      candidateVoteData.BSIT || 0
+                                    }`,
+                                  },
                                 },
-                              },
-                              {
-                                data: [candidateVoteData.BSCS || 0],
-                                stack: "total",
-                                color: "#00796B",
-                                label: "BSCS",
-                                tooltip: {
-                                  label: `BSCS: ${candidateVoteData.BSCS || 0}`,
+                                {
+                                  data: [candidateVoteData.BSCS || 0],
+                                  stack: "total",
+                                  color: "#00796B",
+                                  label: "BSCS",
+                                  tooltip: {
+                                    label: `BSCS: ${
+                                      candidateVoteData.BSCS || 0
+                                    }`,
+                                  },
                                 },
-                              },
-                              {
-                                data: [candidateVoteData.BSCA || 0],
-                                stack: "total",
-                                color: "#1ab394",
-                                label: "BSCA",
-                                tooltip: {
-                                  label: `BSCA: ${candidateVoteData.BSCA || 0}`,
+                                {
+                                  data: [candidateVoteData.BSCA || 0],
+                                  stack: "total",
+                                  color: "#1ab394",
+                                  label: "BSCA",
+                                  tooltip: {
+                                    label: `BSCA: ${
+                                      candidateVoteData.BSCA || 0
+                                    }`,
+                                  },
                                 },
-                              },
-                              {
-                                data: [candidateVoteData.BSBA || 0],
-                                stack: "total",
-                                color: "#00796B",
-                                label: "BSBA",
-                                tooltip: {
-                                  label: `BSBA: ${candidateVoteData.BSBA || 0}`,
+                                {
+                                  data: [candidateVoteData.BSBA || 0],
+                                  stack: "total",
+                                  color: "#00796B",
+                                  label: "BSBA",
+                                  tooltip: {
+                                    label: `BSBA: ${
+                                      candidateVoteData.BSBA || 0
+                                    }`,
+                                  },
                                 },
-                              },
-                              {
-                                data: [candidateVoteData.BSHM || 0],
-                                stack: "total",
-                                color: "#1ab394",
-                                label: "BSHM",
-                                tooltip: {
-                                  label: `BSHM: ${candidateVoteData.BSHM || 0}`,
+                                {
+                                  data: [candidateVoteData.BSHM || 0],
+                                  stack: "total",
+                                  color: "#1ab394",
+                                  label: "BSHM",
+                                  tooltip: {
+                                    label: `BSHM: ${
+                                      candidateVoteData.BSHM || 0
+                                    }`,
+                                  },
                                 },
-                              },
-                              {
-                                data: [candidateVoteData.BSTM || 0],
-                                stack: "total",
-                                color: "#00796B",
-                                label: "BSTM",
-                                tooltip: {
-                                  label: `BSTM: ${candidateVoteData.BSTM || 0}`,
+                                {
+                                  data: [candidateVoteData.BSTM || 0],
+                                  stack: "total",
+                                  color: "#00796B",
+                                  label: "BSTM",
+                                  tooltip: {
+                                    label: `BSTM: ${
+                                      candidateVoteData.BSTM || 0
+                                    }`,
+                                  },
                                 },
-                              },
-                              {
-                                data: [candidateVoteData.BSED || 0],
-                                stack: "total",
-                                color: "#1ab394",
-                                label: "BSED",
-                                tooltip: {
-                                  label: `BSED: ${candidateVoteData.BSED || 0}`,
+                                {
+                                  data: [candidateVoteData.BSED || 0],
+                                  stack: "total",
+                                  color: "#1ab394",
+                                  label: "BSED",
+                                  tooltip: {
+                                    label: `BSED: ${
+                                      candidateVoteData.BSED || 0
+                                    }`,
+                                  },
                                 },
-                              },
-                              {
-                                data: [candidateVoteData.BSE || 0],
-                                stack: "total",
-                                color: "#00796B",
-                                label: "BSE",
-                                tooltip: {
-                                  label: `BSE: ${candidateVoteData.BSE || 0}`,
+                                {
+                                  data: [candidateVoteData.BSE || 0],
+                                  stack: "total",
+                                  color: "#00796B",
+                                  label: "BSE",
+                                  tooltip: {
+                                    label: `BSE: ${candidateVoteData.BSE || 0}`,
+                                  },
                                 },
-                              },
-                              {
-                                data: [candidateVoteData.BSPSY || 0],
-                                stack: "total",
-                                color: "#1ab394",
-                                label: "BSPSY",
-                                tooltip: {
-                                  label: `BSPSY: ${
-                                    candidateVoteData.BSPSY || 0
-                                  }`,
+                                {
+                                  data: [candidateVoteData.BSPSY || 0],
+                                  stack: "total",
+                                  color: "#1ab394",
+                                  label: "BSPSY",
+                                  tooltip: {
+                                    label: `BSPSY: ${
+                                      candidateVoteData.BSPSY || 0
+                                    }`,
+                                  },
                                 },
-                              },
-                              {
-                                data: [candidateVoteData.BSCRIM || 0],
-                                stack: "total",
-                                color: "#00796B",
-                                label: "BSCRIM",
-                                tooltip: {
-                                  label: `BSCRIM: ${
-                                    candidateVoteData.BSCRIM || 0
-                                  }`,
+                                {
+                                  data: [candidateVoteData.BSCRIM || 0],
+                                  stack: "total",
+                                  color: "#00796B",
+                                  label: "BSCRIM",
+                                  tooltip: {
+                                    label: `BSCRIM: ${
+                                      candidateVoteData.BSCRIM || 0
+                                    }`,
+                                  },
                                 },
-                              },
-                              {
-                                data: [
-                                  totalVoters -
-                                    (candidateVoteData.BSIT +
+                                {
+                                  data: [
+                                    totalVoted -
+                                      (candidateVoteData.BSIT +
+                                        candidateVoteData.BSCS +
+                                        candidateVoteData.BSCA +
+                                        candidateVoteData.BSBA +
+                                        candidateVoteData.BSHM +
+                                        candidateVoteData.BSTM +
+                                        candidateVoteData.BSED +
+                                        candidateVoteData.BSE +
+                                        candidateVoteData.BSPSY +
+                                        candidateVoteData.BSCRIM),
+                                  ],
+                                  stack: "total",
+                                  color: "#fff",
+                                  // label: "Total Voters",
+                                  // tooltip: {
+                                  //   label: `BSCRIM: ${
+                                  //     candidateVoteData.BSCRIM || 0
+                                  //   }`,
+                                  // },
+                                },
+                                // Other courses go here
+                              ]}
+                              yAxis={[
+                                {
+                                  scaleType: "band",
+                                  data: [
+                                    `${candidate.name} TOTAL:${
+                                      candidateVoteData.BSIT +
                                       candidateVoteData.BSCS +
                                       candidateVoteData.BSCA +
                                       candidateVoteData.BSBA +
@@ -342,48 +408,22 @@ function Home() {
                                       candidateVoteData.BSED +
                                       candidateVoteData.BSE +
                                       candidateVoteData.BSPSY +
-                                      candidateVoteData.BSCRIM),
-                                ],
-                                stack: "total",
-                                color: "#fff",
-                                // label: "Total Voters",
-                                // tooltip: {
-                                //   label: `BSCRIM: ${
-                                //     candidateVoteData.BSCRIM || 0
-                                //   }`,
-                                // },
-                              },
-                              // Other courses go here
-                            ]}
-                            yAxis={[
-                              {
-                                scaleType: "band",
-                                data: [
-                                  `${candidate.name} TOTAL:${
-                                    candidateVoteData.BSIT +
-                                    candidateVoteData.BSCS +
-                                    candidateVoteData.BSCA +
-                                    candidateVoteData.BSBA +
-                                    candidateVoteData.BSHM +
-                                    candidateVoteData.BSTM +
-                                    candidateVoteData.BSED +
-                                    candidateVoteData.BSE +
-                                    candidateVoteData.BSPSY +
-                                    candidateVoteData.BSCRIM
-                                  }`,
-                                ],
-                                categoryGapRatio: 0.8,
-                              },
-                            ]}
-                          />
+                                      candidateVoteData.BSCRIM
+                                    }`,
+                                  ],
+                                  categoryGapRatio: 0.8,
+                                },
+                              ]}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>

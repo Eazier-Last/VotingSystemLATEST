@@ -39,7 +39,7 @@ function Main({ onLogout }) {
         );
         break;
       default:
-        setActiveComponent(<div>Select a component from the sidebar.</div>);
+        setActiveComponent(<Home />);
         break;
     }
   };

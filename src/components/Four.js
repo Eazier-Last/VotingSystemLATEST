@@ -42,6 +42,7 @@ function Four() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState("BSIT");
+
   const [users, setUsers] = useState({
     BSIT: [],
     BSCS: [],
@@ -112,25 +113,25 @@ function Four() {
     setIsModalOpen(false);
   };
 
-  const handleCreateUser = async (newUser) => {
-    const { error } = await supabase.from("users").insert([
-      {
-        name: newUser.name,
-        course: newUser.course,
-        // studentNumber is no longer saved to the database
-      },
-    ]);
-    if (error) {
-      console.error("Error adding user:", error.message);
-      alert("Failed to add user: " + error.message);
-      return;
-    }
+  // const handleCreateUser = async (newUser) => {
+  //   const { error } = await supabase.from("users").insert([
+  //     {
+  //       name: newUser.name,
+  //       course: newUser.course,
+  //       // studentNumber is no longer saved to the database
+  //     },
+  //   ]);
+  //   if (error) {
+  //     console.error("Error adding user:", error.message);
+  //     alert("Failed to add user: " + error.message);
+  //     return;
+  //   }
 
-    setUsers((prevUsers) => ({
-      ...prevUsers,
-      [newUser.course]: [...prevUsers[newUser.course], newUser],
-    }));
-  };
+  //   setUsers((prevUsers) => ({
+  //     ...prevUsers,
+  //     [newUser.course]: [...prevUsers[newUser.course], newUser],
+  //   }));
+  // };
 
   const handleEditUser = async (userId, updatedUser) => {
     const { error } = await supabase
@@ -288,6 +289,7 @@ function Four() {
               <Table sx={{ minWidth: 700 }} aria-label="simple table">
                 <TableHead>
                   <TableRow>
+                    <StyledTableCell>Student Number</StyledTableCell>
                     <StyledTableCell>Name</StyledTableCell>
                     <StyledTableCell align="right"></StyledTableCell>
                   </TableRow>
@@ -297,7 +299,10 @@ function Four() {
                     users[selectedCourse].map((user, index) => (
                       <StyledTableRow key={user.id}>
                         <StyledTableCell align="left">
-                          {user.name}
+                          {user.studentNumber}
+                        </StyledTableCell>
+                        <StyledTableCell align="left">
+                          {user.name}({user.auth_id})
                         </StyledTableCell>
                         <StyledTableCell align="right">
                           <Button

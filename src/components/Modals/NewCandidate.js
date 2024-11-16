@@ -21,17 +21,25 @@ function NewCandidate({ toggleModal, onSubmit, candidate }) {
   const [positions, setPositions] = useState([]);
 
   useEffect(() => {
+    console.log("Candidate data in modal:", candidate);
     if (candidate) {
-      setCandidateName(candidate.name);
-      setSkills(candidate.skills);
-      setDescription(candidate.description);
-      setCampaignObjective(candidate.campaignObjective);
-      setPosition(candidate.position);
-      setAvatarUrl(candidate.arvatarUrl);
+      setCandidateName(candidate.name || "");
+      setSkills(candidate.skills || "");
+      setDescription(candidate.description || "");
+      setCampaignObjective(candidate.campaignObjective || "");
+      setPosition(candidate.position || "");
+      setAvatarUrl(candidate.avatarUrl || null);
+    } else {
+      // Reset for new candidate
+      setCandidateName("");
+      setSkills("");
+      setDescription("");
+      setCampaignObjective("");
+      setPosition("");
+      setAvatarUrl(null);
     }
-  }, [candidate]);
+  }, [candidate]); // Ensure the dependency is correct
 
-  //This one is free only showing base64 image
   const convertToBase64 = (file) => {
     const reader = new FileReader();
     reader.readAsDataURL(file.target.files[0]);
@@ -42,30 +50,6 @@ function NewCandidate({ toggleModal, onSubmit, candidate }) {
       console.log("Error: ", error);
     };
   };
-
-  //This feature is if you want to upload photo in supabase (50mb only free)
-  // const handleImageUpload = async (event) => {
-  //   const file = event.target.files[0];
-  //   const fileName = file.name;
-  //   setLoading(true);
-
-  //   const { error } = await supabase.storage
-  //     .from("avatars")
-  //     .upload(fileName, file);
-
-  //   if (error) {
-  //     console.error("Error uploading image:", error);
-  //     if (error.error === "Duplicate")
-  //       window.alert("File is duplicate, Please change image name!");
-  //     setLoading(false);
-  //   } else {
-  //     const { data } = await supabase.storage
-  //       .from("avatars")
-  //       .getPublicUrl(fileName);
-  //     setAvatarUrl(data.publicUrl);
-  //     setLoading(false);
-  //   }
-  // };
 
   const fetchPositions = async () => {
     const { data, error } = await supabase.from("positions").select("*");
@@ -106,16 +90,10 @@ function NewCandidate({ toggleModal, onSubmit, candidate }) {
       campaignObjective,
       position,
       avatarUrl,
+      candidateID: candidate?.candidateID, // Preserve candidateID if editing
     };
 
     onSubmit(candidateData);
-
-    setCandidateName("");
-    setSkills("");
-    setDescription("");
-    setCampaignObjective("");
-    setAvatarUrl(null);
-    setPosition("");
     toggleModal();
   };
 
@@ -123,13 +101,20 @@ function NewCandidate({ toggleModal, onSubmit, candidate }) {
     <div className="modal">
       <div className="modalOverlay" onClick={toggleModal}></div>
       <div className="modalContent">
-        <div className="closeBtn">
-          <Button className="closeIcon" variant="text" onClick={toggleModal}>
-            <CloseIcon />
-          </Button>
-        </div>
+        <div className="closeBtn"></div>
         <div>
-          <h2 className="topLabel">NEW CANDIDATE</h2>
+          <h2 className="topLabel">
+            {candidate ? "EDIT CANDIDATE" : "NEW CANDIDATE"}
+            <span>
+              <Button
+                className="closeIcon"
+                variant="text"
+                onClick={toggleModal}
+              >
+                <CloseIcon />
+              </Button>
+            </span>
+          </h2>
         </div>
         <form onSubmit={handleSubmit}>
           <div>

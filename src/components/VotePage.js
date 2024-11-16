@@ -1,3 +1,5 @@
+// src/VotePage.js
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "./client";
 import AvatarComponent from "./Avatar/AvatarComponent";
@@ -5,11 +7,17 @@ import { useNavigate } from "react-router-dom";
 import "../App.css";
 import "./css/VotePage.css";
 import Button from "@mui/material/Button";
+import ConfirmVote from "./Modals/ConfirmVote"; // Import the confirmation modal
+import CandidateVoteInfo from "./Modals/CandidateVoteInfo"; // Import the candidate info modal
+import InfoIcon from "@mui/icons-material/Info";
 
 function VotePage() {
   const [candidates, setCandidates] = useState([]);
   const [selectedCandidates, setSelectedCandidates] = useState({});
   const [userCourse, setUserCourse] = useState(null);
+  const [openModal, setOpenModal] = useState(false); // Confirmation modal state
+  const [infoModalOpen, setInfoModalOpen] = useState(false); // Candidate info modal state
+  const [selectedCandidateInfo, setSelectedCandidateInfo] = useState(null); // Store candidate info for the modal
   const navigate = useNavigate();
 
   // Check if the user has already voted
@@ -61,8 +69,31 @@ function VotePage() {
     }));
   };
 
+  // Open confirmation modal
+  const handleOpenModal = () => {
+    setOpenModal(true);
+  };
+
+  // Close confirmation modal
+  const handleCloseModal = () => {
+    setOpenModal(false);
+  };
+
+  // Open candidate info modal
+  const handleInfoModalOpen = (candidate) => {
+    setSelectedCandidateInfo(candidate); // Pass candidate info to the modal
+    setInfoModalOpen(true);
+  };
+
+  // Close candidate info modal
+  const handleInfoModalClose = () => {
+    setInfoModalOpen(false);
+    setSelectedCandidateInfo(null);
+  };
+
   // Handle submitting the vote
   const handleSubmitVote = async () => {
+    handleCloseModal(); // Close the modal
     const allPositionsSelected = Object.keys(groupedCandidates).every(
       (position) => selectedCandidates[position]
     );
@@ -152,11 +183,21 @@ function VotePage() {
     return acc;
   }, {});
 
+  // Prepare selected candidates for the modal
+  const selectedCandidatesList = Object.keys(selectedCandidates)
+    .map((position) => {
+      const candidateID = selectedCandidates[position];
+      const candidate = candidates.find((c) => c.candidateID === candidateID);
+      return candidate ? { position, name: candidate.name } : null;
+    })
+    .filter(Boolean);
+
   return (
-    <div className=" votePage">
-      <div className="listContainer ">
+    <div className="votePage">
+      <div className="listContainer">
         <div>
           <h2 className="topLabel votePageLabel">CANDIDATES</h2>
+          <p className="votePageLabel">Select an image to vote</p>
         </div>
         {Object.keys(groupedCandidates).map((position) => (
           <div key={position}>
@@ -171,31 +212,63 @@ function VotePage() {
                 const isSelected =
                   selectedCandidates[position] === candidate.candidateID;
                 return (
-                  <div
-                    key={candidate.candidateID}
-                    className={`candidate ${isSelected ? "selected" : ""}`}
-                    onClick={() =>
-                      handleCandidateSelect(position, candidate.candidateID)
-                    }
-                  >
-                    <div className="profileRow">
-                      <AvatarComponent
-                        imgStyle={{
-                          width: "100%",
-                          height: "100%",
-                          borderRadius: "10px",
-                          position: "relative",
-                        }}
-                        imgSrc={candidate.avatarUrl}
-                      />
-                      {isSelected && (
-                        <div className="overlay">
-                          <span className="overlayText">VOTED</span>
-                        </div>
-                      )}
+                  <div>
+                    <div
+                      key={candidate.candidateID}
+                      className={`candidate ${isSelected ? "selected" : ""}`}
+                      onClick={() =>
+                        handleCandidateSelect(position, candidate.candidateID)
+                      }
+                    >
+                      <div className="profileRow">
+                        <AvatarComponent
+                          imgStyle={{
+                            width: "100%",
+                            height: "100%",
+                            borderRadius: "10px",
+                            position: "relative",
+                          }}
+                          imgSrc={candidate.avatarUrl}
+                        />
+                        {isSelected && (
+                          <div
+                            style={{
+                              backgroundColor: "rgb(26, 179, 148, .8)",
+                              height: "50px",
+                              borderTopRightRadius: "100%",
+                              borderTopLeftRadius: "100%",
+                            }}
+                            className="overlay"
+                          >
+                            <span
+                              style={{ fontSize: "2rem" }}
+                              className="overlayText"
+                            >
+                              ✔
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="candidateName votePageLabel">
-                      <p>{candidate.name}</p>
+                      <p>
+                        <span>
+                          {" "}
+                          <Button
+                            className="candidateVoteInfo"
+                            variant="contained"
+                            // color="primary"
+                            sx={{
+                              backgroundColor: "#1ab394",
+                              marginRight: 1,
+                            }}
+                            onClick={() => handleInfoModalOpen(candidate)}
+                          >
+                            <InfoIcon />
+                          </Button>
+                        </span>
+                        {candidate.name}
+                      </p>
                     </div>
                   </div>
                 );
@@ -212,12 +285,27 @@ function VotePage() {
               backgroundColor: "#1ab394",
               marginTop: "10px",
             }}
-            onClick={handleSubmitVote}
+            onClick={handleOpenModal}
           >
             Submit
           </Button>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmVote
+        open={openModal}
+        onClose={handleCloseModal}
+        selectedCandidatesList={selectedCandidatesList}
+        onSubmit={handleSubmitVote}
+      />
+
+      {/* Candidate Info Modal */}
+      <CandidateVoteInfo
+        open={infoModalOpen}
+        onClose={handleInfoModalClose}
+        candidateInfo={selectedCandidateInfo}
+      />
     </div>
   );
 }

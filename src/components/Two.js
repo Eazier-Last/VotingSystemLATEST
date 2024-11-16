@@ -5,6 +5,10 @@ import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import { supabase } from "./client";
+import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 function Two() {
   const [positions, setPositions] = useState([]);
@@ -12,59 +16,117 @@ function Two() {
   const [editIndex, setEditIndex] = useState(null);
 
   const fetchPositions = async () => {
-    const { data, error } = await supabase.from("positions").select("*");
+    const { data, error } = await supabase
+      .from("positions")
+      .select("*")
+      .order("position_order", { ascending: true });
+
     if (error) {
       console.error("Error fetching positions:", error);
       return;
     }
-    setPositions(data.map((pos) => pos.positions));
+    setPositions(data);
   };
 
   const handleAddPosition = async () => {
     if (!positionInput) return;
 
     if (editIndex !== null) {
-      const updatedPositions = positions.map((pos, index) =>
-        index === editIndex ? positionInput : pos
-      );
-      setPositions(updatedPositions);
+      // Update existing position
+      const updatedPositions = [...positions];
+      updatedPositions[editIndex].positions = positionInput;
+
       const { error } = await supabase
         .from("positions")
         .update({ positions: positionInput })
-        .eq("positions", positions[editIndex]);
-      if (error) console.error("Error updating position:", error);
+        .eq("id", positions[editIndex].id);
+
+      if (error) {
+        console.error("Error updating position:", error);
+        return;
+      }
+
       setEditIndex(null);
     } else {
       // Add new position
-      const { error } = await supabase
+      const newPositionOrder = positions.length + 1;
+      const { data, error } = await supabase
         .from("positions")
-        .insert([{ positions: positionInput }]);
+        .insert([
+          { positions: positionInput, position_order: newPositionOrder },
+        ])
+        .select();
+
       if (error) {
         console.error("Error adding position:", error);
         return;
       }
-      setPositions([...positions, positionInput]);
+      setPositions([...positions, ...data]);
     }
+
     setPositionInput("");
     fetchPositions();
   };
 
   const handleDeletePosition = async (index) => {
+    const positionToDelete = positions[index];
     const { error } = await supabase
       .from("positions")
       .delete()
-      .eq("positions", positions[index]);
+      .eq("id", positionToDelete.id);
+
     if (error) {
       console.error("Error deleting position:", error);
       return;
     }
-    const filteredPositions = positions.filter((_, i) => i !== index);
-    setPositions(filteredPositions);
+
+    const updatedPositions = positions.filter((_, i) => i !== index);
+    setPositions(updatedPositions);
+    updatePositionOrderInDB(updatedPositions);
   };
 
   const handleEditPosition = (index) => {
-    setPositionInput(positions[index]);
+    setPositionInput(positions[index].positions);
     setEditIndex(index);
+  };
+
+  const handleMoveUp = async (index) => {
+    if (index === 0) return;
+
+    const updatedPositions = [...positions];
+    [updatedPositions[index - 1], updatedPositions[index]] = [
+      updatedPositions[index],
+      updatedPositions[index - 1],
+    ];
+
+    setPositions(updatedPositions);
+    await updatePositionOrderInDB(updatedPositions);
+  };
+
+  const handleMoveDown = async (index) => {
+    if (index === positions.length - 1) return;
+
+    const updatedPositions = [...positions];
+    [updatedPositions[index], updatedPositions[index + 1]] = [
+      updatedPositions[index + 1],
+      updatedPositions[index],
+    ];
+
+    setPositions(updatedPositions);
+    await updatePositionOrderInDB(updatedPositions);
+  };
+
+  const updatePositionOrderInDB = async (updatedPositions) => {
+    const updates = updatedPositions.map((pos, order) => ({
+      id: pos.id,
+      position_order: order + 1,
+    }));
+
+    const { error } = await supabase.from("positions").upsert(updates);
+
+    if (error) {
+      console.error("Error updating position order:", error);
+    }
   };
 
   React.useEffect(() => {
@@ -127,7 +189,7 @@ function Two() {
                     borderColor: "#1ab394",
                   }}
                 >
-                  {editIndex !== null ? "✔" : "+"} {}
+                  {editIndex !== null ? "✔" : "+"}
                 </Button>
               </Stack>
             </div>
@@ -143,24 +205,60 @@ function Two() {
             </thead>
             <tbody className="tableContainer">
               {positions.map((position, index) => (
-                <tr key={index} className="tableContent">
+                <tr key={position.id} className="tableContent">
                   <hr />
-                  <td className="positionTable">{position}</td>
+                  <td className="positionTable">{position.positions}</td>
                   <td className="actionTable">
-                    <Button
-                      variant="outlined"
-                      sx={{ marginRight: 1 }}
-                      onClick={() => handleEditPosition(index)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={() => handleDeletePosition(index)}
-                    >
-                      Delete
-                    </Button>
+                    <div class="categoryAction">
+                      <div class="categoryActionBtn">
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          sx={{ backgroundColor: "#1ab394", marginRight: 1 }}
+                          onClick={() => handleEditPosition(index)}
+                        >
+                          <EditIcon />
+                        </Button>
+                        <Button
+                          sx={{ backgroundColor: "#eb5455" }}
+                          variant="contained"
+                          color="secondary"
+                          onClick={() => handleDeletePosition(index)}
+                        >
+                          <DeleteIcon />
+                        </Button>
+                        {/* <Button
+                          variant="outlined"
+                          sx={{ marginRight: 1 }}
+                          onClick={() => handleEditPosition(index)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          onClick={() => handleDeletePosition(index)}
+                        >
+                          Delete
+                        </Button> */}
+                      </div>
+                      <div>
+                        <Button
+                          variant="text"
+                          onClick={() => handleMoveUp(index)}
+                          disabled={index === 0}
+                        >
+                          <ArrowDropUpIcon />
+                        </Button>
+                        <Button
+                          variant="text"
+                          onClick={() => handleMoveDown(index)}
+                          disabled={index === positions.length - 1}
+                        >
+                          <ArrowDropDownIcon />
+                        </Button>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ))}

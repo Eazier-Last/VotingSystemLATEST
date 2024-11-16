@@ -67,3 +67,39 @@ span {
 .login {
   text-align: center !important;
 }
+
+.confirmVote {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+  /* background-color: rebeccapurple; */
+  border-radius: 20px;
+}
+.confirmVoteBtn {
+  margin-left: 20px;
+  margin-right: 20px;
+  width: 400px;
+  display: flex;
+  justify-content: space-evenly;
+}
+.confirmBtn {
+  width: 180px;
+  height: 50px;
+}
+.confirmVoteBtn {
+  /* padding: 100px; */
+}
+.dialogTitle {
+  background-color: #1ab394;
+  /* width: 100px; */
+  color: white;
+  width: 400px;
+  border-radius: 20px;
+}
+
+.confirmTable {
+  width: 420px;
+}
